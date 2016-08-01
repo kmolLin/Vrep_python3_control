@@ -3,52 +3,343 @@ matplotlib.use("TkAgg")
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
-
 import matplotlib.animation as animation
 from matplotlib import style
-
+from matplotlib import pyplot as plt
+from tkinter import Frame, Tk, BOTH, Text, Menu, END
 import numpy as np
-
+import json
+import urllib
+import pandas as pd
 import tkinter as tk
 from tkinter import ttk
-
-from matplotlib import pyplot, rcParams
+from tkinter import filedialog
 import serial
 import sys
 import vrep
 
 
+
+
 LARGE_FONT = ("Verdana",12)
+NORM_FONT = ("Verdana",10)
+SMALL_FONT = ("Verdana",8)
 style.use("ggplot")
 
-f = Figure(figsize = (5,5),dpi = 100)
+f = Figure()
 a = f.add_subplot(111)
 
+exchange = "BTC"
+DatCounter = 9000
+programName = "btc"
+resampleSize = "15Min"
+DataPace = "1d"
+candleWidth = 0.008
+
+topIndicator = "None"
+bottomIndicator = "None"
+middleIndicator = "None"
+EMAs = []
+SMAs = []
+
+def addMiddleIndicator(what):
+    global middleIndicator
+    global DatCounter
+
+    if DataPace == "tick":
+        popimsg("Indicator")
+
+    if what != "none":
+        if middleIndicator =="none":
+            if what =="sma":
+                midIQ = tk.Tk()
+                midIQ.wm_title("periods")
+                label = ttk.Label(midIQ,text = "chose")
+                label.pack(side = "top",fill = "x",pady = 10)
+                e = ttk.Entry(midIQ)
+                e.insert(0,10)
+                e.pack()
+                e.focus_set()
+                def callback():
+                    global middleIndicator
+                    global DatCounter
+                    middleIndicator = []
+                    periods = (e.get())
+                    group = []
+                    group.append("sma")
+                    group.append(int(periods))                    
+                    middleIndicator.append(group)
+                    DatCounter = 9000
+                    print("middle set indicator to ",middleIndicator)
+                    midIQ.destroy()
+                b = ttk.Button(midIQ,texxt = "Submit",width = 10,command = callback)
+                b.pack()
+                tk.mainloop()                
+
+            if what =="ema":
+                midIQ = tk.Tk()
+                midIQ.wm_title("periods")
+                label = ttk.Label(midIQ,text = "chose")
+                label.pack(side = "top",fill = "x",pady = 10)
+                e = ttk.Entry(midIQ)
+                e.insert(0,10)
+                e.pack()
+                e.focus_set()
+                def callback():
+                    global middleIndicator
+                    global DatCounter
+                    middleIndicator = []
+                    periods = (e.get())
+                    group = []
+                    group.append("ema")
+                    group.append(int(periods))                    
+                    middleIndicator.append(group)
+                    DatCounter = 9000
+                    print("middle set indicator to ",middleIndicator)
+                    midIQ.destroy()
+                b = ttk.Button(midIQ,texxt = "Submit",width = 10,command = callback)
+                b.pack()
+                tk.mainloop()
+            
+        else:
+                if what == "ema":
+                    midIQ = tk.Tk()
+                    midIQ.wm_title("periods")
+                    label = ttk.Label(midIQ,text = "chose")
+                    label.pack(side = "top",fill = "x",pady = 10)
+                    e = ttk.Entry(midIQ)
+                    e.insert(0,10)
+                    e.pack()
+                    e.focus_set()
+                    def callback():
+                        global middleIndicator
+                        global DatCounter
+                      #  middleIndicator = []
+                        periods = (e.get())
+                        group = []
+                        group.append("ema")
+                        group.append(int(periods))                    
+                        middleIndicator.append(group)
+                        DatCounter = 9000
+                        print("middle set indicator to ",middleIndicator)
+                        midIQ.destroy()
+                    b = ttk.Button(midIQ,text = "Submit",width = 10,command = callback)
+                    b.pack()
+                    tk.mainloop()
+    else:
+        middleIndicator = "none"
+
+def addTopIndicator(what):
+    global topIndicator
+    global DatCounter
+
+    if DataPace == "tick":
+        popimsg("Indicator")
+    elif what =="none":
+        topIndicator = what
+        DatCounter = 9000
+
+    elif what =="rsi":
+        rsiQ = tk.Tk()
+        rsiQ.wm_title("Periods?")
+        label = ttk.Label(rsiQ,text = "chosse a small time to consider.")
+        label.pack(side = "top",fill = "x",pady = 10)
+        
+        e = ttk.Entry(rsiQ)
+        e.insert(0,14)
+        e.pack()
+        e.focus_set()
+        def callback():
+            global topIndicator
+            global DatCounter
+            periods = (e.get())
+            group = []
+            group.append("rsi")
+            group.append(periods)
+            
+            topIndicator = group
+            DatCounter = 9000
+            print("set top indicator to ",group)
+            rsiQ.destroy()
 
 
-#def animate(i):
+        b = ttk.Button(rsiQ,text = "Submit",width = 10,command=callback)
+        b.pack()
+        tk.mainloop()
+
+
+    elif what =="macd":
+        global topIndicator
+        global DatCounter
+        topIndicator = "macd"
+        DatCounter = 9000
+
+def addBottomIndicator(what):
+    global bottomIndicator
+    global DatCounter
+
+    if DataPace == "tick":
+        popimsg("Indicator")
+    elif what =="none":
+        bottomIndicator = what
+        DatCounter = 9000
+
+    elif what =="rsi":
+        rsiQ = tk.Tk()
+        rsiQ.wm_title("Periods?")
+        label = ttk.Label(rsiQ,text = "chosse a small time to consider.")
+        label.pack(side = "top",fill = "x",pady = 10)
+        
+        e = ttk.Entry(rsiQ)
+        e.insert(0,14)
+        e.pack()
+        e.focus_set()
+        def callback():
+            global bottomIndicator
+            global DatCounter
+            periods = (e.get())
+            group = []
+            group.append("rsi")
+            group.append(periods)
+            
+            bottomIndicator = group
+            DatCounter = 9000
+            print("set BOT indicator to ",group)
+            rsiQ.destroy()
+
+
+        b = ttk.Button(rsiQ,text = "Submit",width = 10,command=callback)
+        b.pack()
+        tk.mainloop()
+
+
+    elif what =="macd":
+        global bottomIndicator
+        global DatCounter
+        bottomIndicator = "macd"
+        DatCounter = 9000
+
+            
+
+
+def changeTimeFrame(tf):
+    global resampleSize
+    global dataPace
+    if tf =="7d" and resampleSize =="1Min":
+        popupmsg("Not yet")
+    else:
+        DataPace = tf
+        DatCounter = 9000
+
+def changeSampleSize(size,width):
+    global resampleSize
+    global DatCounter
+    global candleWidth
+    if DataPace =="7d" and resampleSize =="1Min":
+        popupmsg("Not yet")
+    
+    elif DataPace =="tick":
+        popupmsg("you're currently")
+    
+    else:
+        resampleSize = size
+        DatCounter = 9000
+        candleWidth = width
+
+
+
+
+def changeExchange(toWhat,pn):
+    global exchange
+    global DatCounter
+    global programName
+
+    exchange = toWhat
+    programName = pn
+    DatCounter = 9000
+
+def popupmsg(msg):
+    popup = tk.Tk()
+    def leavemini():
+        popup.destroy()
+    popup.wm_title("!")
+    label = ttk.Label(popup,text=msg,font=NORM_FONT)
+    label.pack(side ="top",fill="x",pady=10)
+    B1 = ttk.Button(popup,text="Okay",command = leavemini)
+    B1.pack()
+    popup.mainloop()
+
+#def onOpen(getv):
+
+    #ftypes = [('Python files', '*.py'), ('All files', '*')]
+    #dlg = filedialog.Open(getv, filetypes = ftypes)
+    #fl = dlg.show()
+
+  #  if fl != '':
+    
+        #text = getv.readFile(fl).
+        #getv.txt.insert(END, text)
+        
+        
+        #pullData = open(fl,"r").read()
+        
+
+#def readFile(filename):
+
+
+    #f = open(filename, "r").read()
+   # text = f.read().decode("utf-8")
+ #   #return f
+
+
+def animate(i):
+    
     
 
+    dataLink = 'https://btc-e.com/api/3/trades/btc_usd?limit=2000'
+    data = urllib.request.urlopen(dataLink)
 
+    data = data.readall().decode("utf-8")
+    data = json.loads(data)
 
+    
+    data = data["btc_usd"]
+    data = pd.DataFrame(data)
 
+    buys = data[(data['type']=="bid")]
+    buys["datestamp"] = np.array(buys["timestamp"]).astype("datetime64[s]")
+    buyDates = (buys["datestamp"]).tolist()
 
+    sells = data[(data['type']=="ask")]
+    sells["datestamp"] = np.array(sells["timestamp"]).astype("datetime64[s]")
+    sellDates = (sells["datestamp"]).tolist()
 
+    a.clear()
+    a.plot_date(buyDates,buys["price"],"#00A3E0",label = "buya")
+    a.plot_date(sellDates,sells["price"],"#183A54",label = "sells")
 
+    a.legend(bbox_to_anchor =(0,1.02,1,.102),loc = 3,
+                ncol = 2,borderaxespad=0)
 
+    title = "BTC price"
+    a.set_title(title)
 
-   # pullData = open("sampleData.txt","r").read()
+ 
+    #pullData = open(i,"r").read()
+  #  print(pullData)
    # dataList = pullData.split('\n')
    # xList = []
-   # yList = []
-   # for eachLine in dataList:
-    #    if len(eachLine)>1:
-     #       x, y = eachLine.split(',')
-      #      xList.append(int(x))
-       #     yList.append(int(y))
+    #yList = []
+    #for eachLine in dataList:
+     #   if len(eachLine)>1:
+      #      x, y = eachLine.split(',')
+       #     xList.append(int(x))
+        #    yList.append(int(y))
 
    # a.clear()
-   # a.plot(xList,yList)
+    #a.plot(xList,yList)
+
+
 
 class Seaofbt(tk.Tk):
 
@@ -62,6 +353,81 @@ class Seaofbt(tk.Tk):
         container.pack(side="top",fill="both",expand = True)
         container.grid_rowconfigure(0,weigh=1)
         container.grid_columnconfigure(0,weigh=1)
+
+        menubar = tk.Menu(container)
+        filemenu = tk.Menu(menubar,tearoff =0)
+        filemenu.add_command(label="read file",command = lambda: popupmsg(self))
+        filemenu.add_separator()
+        filemenu.add_command(label = "Exit",command=quit)
+        menubar.add_cascade(label="File",menu=filemenu)
+
+        exchangeChoice = tk.Menu(menubar,tearoff=1)
+        exchangeChoice.add_command(label = "BTC",command = lambda:changeExchange("BTC","btc"))
+        exchangeChoice.add_command(label = "Bitstamp",command = lambda:changeExchange("Bitstamp","bITSTAMP"))
+        exchangeChoice.add_command(label = "Huobi",command = lambda:changeExchange("Huobi","btc"))
+        menubar.add_cascade(label="Exchange",menu=exchangeChoice)
+        
+
+        dataTF = tk.Menu(menubar,tearoff=1)
+        dataTF.add_command(label = "1 Day",
+                                    command = lambda: changeTimeFrame('1d'))
+        dataTF.add_command(label = "3 Day",
+                                    command = lambda: changeTimeFrame('3d'))
+        dataTF.add_command(label = "1 Week",
+                                    command = lambda: changeTimeFrame('7d'))
+        menubar.add_cascade(label = "Data Time Frame",menu = dataTF)
+
+
+        OHLCI = tk.Menu(menubar,tearoff=1)
+        OHLCI.add_command(label = "Tick",
+                                    command = lambda: changeSampleSize('tick'))
+        OHLCI.add_command(label = "1 Minute",
+                                    command = lambda: changeSampleSize('1Min',0.0005))
+        OHLCI.add_command(label = "5 Minute",
+                                    command = lambda: changeSampleSize('5Min',0.03))
+        OHLCI.add_command(label = "15 Minute",
+                                    command = lambda: changeSampleSize('15Min',0.08))
+        OHLCI.add_command(label = "30 Minute",
+                                    command = lambda: changeSampleSize('30Min',0.016))
+        OHLCI.add_command(label = "1  Hour",
+                                    command = lambda: changeSampleSize('1H',0.03))
+        menubar.add_cascade(label = "OHLCI",menu = OHLCI)
+        
+
+
+        topIndi = tk.Menu(menubar,tearoff = 1)
+        topIndi.add_command(label = "None",
+                                    command = lambda: addTopIndicator('None'))
+        topIndi.add_command(label = "RSI",
+                                    command = lambda: addTopIndicator('rsi'))
+        topIndi.add_command(label = "MACD",
+                                    command = lambda: addTopIndicator('macd'))
+        menubar.add_cascade(label = "Top Indicator",menu = topIndi)
+
+
+
+        mainI = tk.Menu(menubar,tearoff = 1)
+        mainI.add_command(label = "None",
+                                    command = lambda: addMiddleIndicator('None'))
+        mainI.add_command(label = "SMA",
+                                    command = lambda: addMiddleIndicator('sma'))
+        mainI.add_command(label = "EMA",
+                                    command = lambda: addMiddleIndicator('ema'))
+        menubar.add_cascade(label = "Main/middle Indicator",menu = mainI)
+
+
+
+        bottomI = tk.Menu(menubar,tearoff = 1)
+        bottomI.add_command(label = "None",
+                                    command = lambda: addBottomIndicator('None'))
+        bottomI.add_command(label = "RSI",
+                                    command = lambda: addBottomIndicator('rsi'))
+        bottomI.add_command(label = "MACD",
+                                    command = lambda: addBottomIndicator('macd'))
+        menubar.add_cascade(label = "Bottom Indicator",menu = bottomI)
+        
+        
+        tk.Tk.config(self,menu=menubar)
 
         self.frames = {}
 
@@ -89,14 +455,14 @@ class StartPage(tk.Frame):
     def __init__(self,parent,controller):
 
         tk.Frame.__init__(self,parent)
-        label = tk.Label(self,text="PageOne",font = LARGE_FONT)
+        label = tk.Label(self,text="Vrep control",font = LARGE_FONT)
         label.pack(pady = 10,padx = 10)
 
-        button1 = ttk.Button(self,text = "Visit Page 1",
+        button1 = ttk.Button(self,text = "Pages1",
                                     command = lambda: controller.show_frame(PageOne))
         button1.pack()
 
-        button2 = ttk.Button(self,text = "Visit Page 2",
+        button2 = ttk.Button(self,text = "Vrep control",
                                     command = lambda: controller.show_frame(PageTwo))
         button2.pack()
 
@@ -254,7 +620,8 @@ class PageThree(tk.Frame):
 
 
 app  = Seaofbt()
-#ani = animation.FuncAnimation(f,animate,interval = 1000)
+app.geometry("1280x720")
+ani = animation.FuncAnimation(f,animate,interval = 5000)
 app.mainloop()
 
 
