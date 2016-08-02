@@ -2,10 +2,13 @@ import matplotlib
 matplotlib.use("TkAgg")
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,NavigationToolbar2TkAgg
-from matplotlib.figure import Figure
+#from matplotlib.figure import Figure
 import matplotlib.animation as animation
 from matplotlib import style
 from matplotlib import pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.ticker as mticker
+
 from tkinter import Frame, Tk, BOTH, Text, Menu, END
 import numpy as np
 import json
@@ -26,21 +29,72 @@ NORM_FONT = ("Verdana",10)
 SMALL_FONT = ("Verdana",8)
 style.use("ggplot")
 
-f = Figure()
-a = f.add_subplot(111)
+f = plt.figure()
+#a = f.add_subplot(111)
 
 exchange = "BTC"
 DatCounter = 9000
 programName = "btc"
 resampleSize = "15Min"
-DataPace = "1d"
+DataPace = "tick"
 candleWidth = 0.008
 
+paneCount = 1
 topIndicator = "None"
 bottomIndicator = "None"
 middleIndicator = "None"
+chartLoad = True
 EMAs = []
 SMAs = []
+
+
+def tutorial():
+ #   def leavmini(what)
+#        what.destroy
+
+    def page2():
+        tut.destroy()
+        tut2 = tk.Tk()
+
+        def page3():
+            tut2.destroy()
+            tut3 = tk.Tk()
+            
+            tut3.wm_title("part 3!")
+            label = ttk.Label(tut3,text = "Part 3",font =NORM_FONT )
+            label.pack(side = "top",fill = "x",pady = 10)
+            B1 = ttk.Button(tut3,text = "Done!",command = tut3.destroy)
+            B1.pack()
+            tut3.mainloop()
+
+        tut2.wm_title("part 2!")
+        label = ttk.Label(tut2,text = "Part 2",font =NORM_FONT )
+        label.pack(side = "top",fill = "x",pady = 10)
+        B1 =ttk.Button(tut2,text = "Next",command = page3)
+        B1.pack()
+        tut2.mainloop()
+
+    tut = tk.Tk()
+    tut.wm_title("Tutorial")
+    label = ttk.Label(tut,text = "what do you want to help",font =NORM_FONT )
+    label.pack(side = "top",fill = "x",pady = 10)
+
+    B1 = ttk.Button(tut,text = "Overview the app",command = lambda:popupmsg("Not yet"))
+    B1.pack()
+    B2 = ttk.Button(tut,text = "test",command = page2)
+    B2.pack()
+    B3 = ttk.Button(tut,text = "Questione",command = lambda:popupmsg("Not yet"))
+    B3.pack()
+    
+    tut.mainloop()
+
+def loadChart(run):
+    global chartLoad
+    if run =="start":
+        chartLoad = True
+    elif run =="stop":
+        chartLoad = False
+
 
 def addMiddleIndicator(what):
     global middleIndicator
@@ -293,51 +347,72 @@ def popupmsg(msg):
 
 
 def animate(i):
-    
-    
-
-    dataLink = 'https://btc-e.com/api/3/trades/btc_usd?limit=2000'
-    data = urllib.request.urlopen(dataLink)
-
-    data = data.readall().decode("utf-8")
-    data = json.loads(data)
-
-    
-    data = data["btc_usd"]
-    data = pd.DataFrame(data)
-
-    buys = data[(data['type']=="bid")]
-    buys["datestamp"] = np.array(buys["timestamp"]).astype("datetime64[s]")
-    buyDates = (buys["datestamp"]).tolist()
-
-    sells = data[(data['type']=="ask")]
-    sells["datestamp"] = np.array(sells["timestamp"]).astype("datetime64[s]")
-    sellDates = (sells["datestamp"]).tolist()
+     
+    pullData = open(i,"r").read()
+    print(pullData)
+    dataList = pullData.split('\n')
+    xList = []
+    yList = []
+    for eachLine in dataList:
+        if len(eachLine)>1:
+            x, y = eachLine.split(',')
+            xList.append(int(x))
+            yList.append(int(y))
 
     a.clear()
-    a.plot_date(buyDates,buys["price"],"#00A3E0",label = "buya")
-    a.plot_date(sellDates,sells["price"],"#183A54",label = "sells")
-
-    a.legend(bbox_to_anchor =(0,1.02,1,.102),loc = 3,
-                ncol = 2,borderaxespad=0)
-
-    title = "BTC price"
-    a.set_title(title)
-
+    a.plot(xList,yList)
+   
  
-    #pullData = open(i,"r").read()
-  #  print(pullData)
-   # dataList = pullData.split('\n')
-   # xList = []
-    #yList = []
-    #for eachLine in dataList:
-     #   if len(eachLine)>1:
-      #      x, y = eachLine.split(',')
-       #     xList.append(int(x))
-        #    yList.append(int(y))
+    '''global DatCounter
 
-   # a.clear()
-    #a.plot(xList,yList)
+    if chartLoad:
+        if paneCount ==1:
+            if DataPace =="tick":
+                try:
+                    a = plt.subplot2grid((6,4),(0,0),rowspan = 5,colspan = 4)
+                    a2 = plt.subplot2grid((6,4),(0,0),rowspan = 1,colspan = 4,sharex = a)
+                                
+                    dataLink = 'https://btc-e.com/api/3/trades/btc_usd?limit=2000'
+                    data = urllib.request.urlopen(dataLink)
+
+                    data = data.readall().decode("utf-8")
+                    data = json.loads(data)
+
+                    
+                    data = data["btc_usd"]
+                    data = pd.DataFrame(data)
+
+                    data["datestamp"] = np.array(data["timestamp"]).astype("datetime64[s]")
+                    allDates = data["datestamp"].tolist()
+                    buys = data[(data['type']=="bid")]
+                    #buys["datestamp"] = np.array(buys["timestamp"]).astype("datetime64[s]")
+                    buyDates = (buys["datestamp"]).tolist()
+
+                    sells = data[(data['type']=="ask")]
+                    #sells["datestamp"] = np.array(sells["timestamp"]).astype("datetime64[s]")
+                    sellDates = (sells["datestamp"]).tolist()
+
+                    volume = data["amount"]
+
+                    a.clear()
+                    a.plot_date(buyDates,buys["price"],"#00A3E0",label = "buys")
+                    a.plot_date(sellDates,sells["price"],"#183A54",label = "sells")
+
+                    a2.fill_between(allDates,0,volume,facecolor = "#183A54")
+
+                    a.xaxis.set_major_locator(mticker.MaxNLocator(5))
+                    a.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d %H:M:S"))
+
+                    a.legend(bbox_to_anchor =(0,1.02,1,.102),loc = 3,
+                                ncol = 2,borderaxespad=0)
+
+                    title = "BTC price"
+                    a.set_title(title)
+                except Exception as e:
+                    print("failue",e)
+'''
+
+
 
 
 
@@ -426,6 +501,39 @@ class Seaofbt(tk.Tk):
                                     command = lambda: addBottomIndicator('macd'))
         menubar.add_cascade(label = "Bottom Indicator",menu = bottomI)
         
+
+        tradeButton = tk.Menu(menubar,tearoff = 1)
+        tradeButton.add_command(label = "Manual Trading",
+                                                command = lambda: popupmsg("this not yet"))
+        tradeButton.add_command(label = "Automated Trading",
+                                                command = lambda: popupmsg("Audomated not yet"))
+        
+        tradeButton.add_separator()
+        tradeButton.add_command(label = "Quick buy",
+                                                command = lambda: popupmsg("quick not yet"))
+        tradeButton.add_command(label = "Quick sell",
+                                                command = lambda: popupmsg("sell not yet"))
+
+        tradeButton.add_separator()
+        tradeButton.add_command(label = "Set up Quick buy",
+                                                command = lambda: popupmsg("quick not yet"))
+
+        menubar.add_cascade(label="Trading",menu = tradeButton)
+
+
+        startStop = tk.Menu(menubar,tearoff = 1)
+        
+        startStop.add_command(label = "resume",
+                                            command = lambda: loadChart('start'))
+        startStop.add_command(label = "pause",
+                                            command = lambda: loadChart('stop'))
+        menubar.add_cascade(label = "Resume/Pause client",menu = startStop)
+
+        helpmenu = tk.Menu(menubar,tearoff=1)
+        helpmenu.add_command(label = "Tutorial",command = tutorial)
+        menubar.add_cascade(label = "HELP",menu=helpmenu)
+
+
         
         tk.Tk.config(self,menu=menubar)
 
@@ -458,11 +566,11 @@ class StartPage(tk.Frame):
         label = tk.Label(self,text="Vrep control",font = LARGE_FONT)
         label.pack(pady = 10,padx = 10)
 
-        button1 = ttk.Button(self,text = "Pages1",
+        button1 = ttk.Button(self,text = "Vrep 手臂控制",
                                     command = lambda: controller.show_frame(PageOne))
         button1.pack()
 
-        button2 = ttk.Button(self,text = "Vrep control",
+        button2 = ttk.Button(self,text = "Vrep 3D列印控制",
                                     command = lambda: controller.show_frame(PageTwo))
         button2.pack()
 
@@ -473,20 +581,124 @@ class StartPage(tk.Frame):
 
 class PageOne(tk.Frame):
         
-    def __init__(self,parent,controller):
-        tk.Frame.__init__(self,parent)
-        label = tk.Label(self,text="Start Page",font = LARGE_FONT)
-        label.pack(pady = 10,padx = 10)
-        
-        
-        button1 = ttk.Button(self,text = "Back to Home",
+    def __init__(self, parent,controller):
+        tk.Frame.__init__(self, parent)
+
+        self.createWidgets()
+        self.getNumber1 = 0
+        self.getNumber2 = 0
+        self.getNumber3 = 0
+
+        label1 = tk.Label(self,text="").grid(column=0, row=1)
+        label2 = tk.Label(self,text="手臂X").grid(column=0, row=2)
+        label3 = tk.Label(self,text="").grid(column=0, row=3)
+        label4 = tk.Label(self,text="手臂Y").grid(column=0, row=4)
+        label5 = tk.Label(self,text="").grid(column=0, row=5)
+        label6 = tk.Label(self,text="手臂Z").grid(column=0, row=6)
+
+
+        button1 = ttk.Button(self,text = "Back",
                                     command = lambda: controller.show_frame(StartPage))
-        button1.pack()
+        button1.grid(row = 20,column = 3)
 
-        button2 = ttk.Button(self,text = "Visit Page2",
-                                    command = lambda: controller.show_frame(PageTwo))
-        button2.pack()
+        button2 = ttk.Button(self, text='Quit', width=5, command=self.quit)
+        button2.grid(row = 20,column = 2)
 
+        button3 = ttk.Button(self, text='Go', width=5, command =lambda:self.show_entry_fields())
+        button3.grid(row = 20,column = 1)
+
+
+    def createWidgets(self):
+        self.entry1 = tk.Entry(self)
+        self.entry1["width"] = 12
+        self.entry1.grid(row=2, column=1)
+        self.entry2 = tk.Entry(self)
+        self.entry2["width"] = 12
+        self.entry2.grid(row=4, column=1)
+        self.entry3 = tk.Entry(self)
+        self.entry3["width"] = 12
+        self.entry3.grid(row=6, column=1)
+
+        
+
+ 
+    def show_entry_fields(self):
+
+        self.getNumber1 = self.entry1.get()
+        self.getNumber2 = self.entry2.get()
+        self.getNumber3 = self.entry3.get()
+  
+        x = self.getNumber1
+        y = self.getNumber2
+        z = self.getNumber3
+ 
+        if x =='' or y==''or z =='':
+            x = 0
+            y = 0
+            z = 0
+            print("Error")
+ 
+        else:
+            x = float(self.getNumber1)
+            y = float(self.getNumber2)
+            z = float(self.getNumber3)
+ 
+ 
+            if float(x) >= 125:
+                x = 125
+                print("X_axis is out of range")
+            if float(y) >= 125:
+                y = 125
+                print("Y_axis is out of range")
+            if float(z) >= 400:
+                z = 400     
+                print("Z_axis is out of range")
+            if float(x) <= -125:
+                x = -125
+                print("X_axis is out of range")
+            if float(y) <= -125:
+                y = -125
+                print("Y_axis is out of range")
+            if float(z) < 0:
+                z = 0
+                print("Z_axis is out of range")
+
+            if (float(x) <= -125*math.sin(30*deg)) & (float(y) >= 125*math.cos(30*deg)):
+                x = -125*math.sin(30*deg)
+                y = 125*math.cos(30*deg)
+
+            if (float(x) <= -125*math.sin(30*deg)) & (float(y) <= -125*math.cos(30*deg)):
+                x = -125*math.sin(30*deg)
+                y = -125*math.cos(30*deg)
+
+            if (float(x) >= 125*math.sin(30*deg)) & (float(y) >= 125*math.cos(30*deg)):
+                x = 125*math.sin(30*deg)
+                y = 125*math.cos(30*deg)
+
+            if (float(x) >= -125*math.sin(30*deg)) & (float(y) <= -125*math.cos(30*deg)):
+                x = 125*math.sin(30*deg)
+                y = -125*math.cos(30*deg)
+
+
+            e=x/1000
+            r=y/1000
+            t=z/889
+            if t <= 0.11656:
+                t = t+0.11656
+ 
+            vrep.simxFinish(-1)
+            clientID = vrep.simxStart('127.0.0.1', 19999, True, True, 5000, 5)
+            if clientID!= -1:
+                print("Connected to remote server")
+            else:
+                print('Connection not successful')
+                sys.exit('Could not connect')
+            errorCode,plate=vrep.simxGetObjectHandle(clientID,'plate',vrep.simx_opmode_oneshot_wait)
+            if errorCode == -1:
+                print('Can not find left or right motor')
+                sys.exit()                
+            errorCode=vrep.simxSetObjectPosition(clientID,plate,-1,[e,r,t], vrep.simx_opmode_oneshot)
+            print(x,y,z)
 class PageTwo(tk.Frame):
         
     def __init__(self, parent,controller):
@@ -552,24 +764,47 @@ class PageTwo(tk.Frame):
             z = float(self.getNumber3)
  
  
-            if float(x) >= 100:   # set x&y&z limit 
-                x = 100
-            if float(y) >= 100:
-                y = 100
+            if float(x) >= 125:
+                x = 125
+                print("X_axis is out of range")
+            if float(y) >= 125:
+                y = 125
+                print("Y_axis is out of range")
             if float(z) >= 400:
-                z = 400
-            if float(x) <= -100:
-                x = -100
-            if float(y) <= -100:
-                y = -100
-            if float(z) <= 0:
+                z = 400     
+                print("Z_axis is out of range")
+            if float(x) <= -125:
+                x = -125
+                print("X_axis is out of range")
+            if float(y) <= -125:
+                y = -125
+                print("Y_axis is out of range")
+            if float(z) < 0:
                 z = 0
-            e=x/1222
-            r=y/1222
+                print("Z_axis is out of range")
+
+            if (float(x) <= -125*math.sin(30*deg)) & (float(y) >= 125*math.cos(30*deg)):
+                x = -125*math.sin(30*deg)
+                y = 125*math.cos(30*deg)
+
+            if (float(x) <= -125*math.sin(30*deg)) & (float(y) <= -125*math.cos(30*deg)):
+                x = -125*math.sin(30*deg)
+                y = -125*math.cos(30*deg)
+
+            if (float(x) >= 125*math.sin(30*deg)) & (float(y) >= 125*math.cos(30*deg)):
+                x = 125*math.sin(30*deg)
+                y = 125*math.cos(30*deg)
+
+            if (float(x) >= -125*math.sin(30*deg)) & (float(y) <= -125*math.cos(30*deg)):
+                x = 125*math.sin(30*deg)
+                y = -125*math.cos(30*deg)
+
+
+            e=x/1000
+            r=y/1000
             t=z/889
             if t <= 0.11656:
                 t = t+0.11656
- 
  
             vrep.simxFinish(-1)
             clientID = vrep.simxStart('127.0.0.1', 19999, True, True, 5000, 5)
@@ -621,7 +856,7 @@ class PageThree(tk.Frame):
 
 app  = Seaofbt()
 app.geometry("1280x720")
-ani = animation.FuncAnimation(f,animate,interval = 5000)
+#ani = animation.FuncAnimation(f,animate,interval = 5000)
 app.mainloop()
 
 
