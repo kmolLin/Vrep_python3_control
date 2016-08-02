@@ -20,6 +20,7 @@ from tkinter import filedialog
 import serial
 import sys
 import vrep
+import math
 
 
 
@@ -623,6 +624,7 @@ class PageOne(tk.Frame):
 
  
     def show_entry_fields(self):
+        deg = math.pi/180
 
         self.getNumber1 = self.entry1.get()
         self.getNumber2 = self.entry2.get()
