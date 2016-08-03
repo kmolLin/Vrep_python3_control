@@ -104,7 +104,7 @@ class Seaofbt(tk.Tk):
         tk.Tk.__init__(self, *args, **kwargs)
  
   #      tk.Tk.iconbitmap(self,default = "client.ico")  改變左上角的圖示
-        tk.Tk.wm_title(self,"My works")
+        tk.Tk.wm_title(self,"Control the V-rep")
  
         container = tk.Frame(self)        
         container.pack(side="top",fill="both",expand = True)
@@ -197,6 +197,12 @@ class PageOne(tk.Frame):
         button3.grid(row = 20,column = 0)
 
 
+    
+    def test_selection(self):
+        
+        print(self)
+
+
     def createWidgets(self):
         self.entry1 = tk.Entry(self)
         self.entry1["width"] = 12
@@ -208,8 +214,13 @@ class PageOne(tk.Frame):
         self.entry3["width"] = 12
         self.entry3.grid(row=6, column=1)
 
+        self.scale1 = tk.Scale(self)
+        self.scale1.grid(row = 50,column = 0)
+
         
 
+        #self.Scale
+        
  
     def show_entry_fields(self):
         deg = math.pi/180
@@ -217,6 +228,7 @@ class PageOne(tk.Frame):
         self.getNumber2 = self.entry2.get()
         self.getNumber3 = self.entry3.get()
   
+
         x = self.getNumber1
         y = self.getNumber2
         z = self.getNumber3
@@ -232,18 +244,12 @@ class PageOne(tk.Frame):
             y = float(self.getNumber2)
             z = float(self.getNumber3)
  
- 
-
             if float(y) >= 0:
                 y = y*(-1)
  
             if float(z) >= 0:
                 z = z*(-1)   
             
-
-
-
- 
             vrep.simxFinish(-1)
             clientID = vrep.simxStart('127.0.0.1', 19999, True, True, 5000, 5)
             if clientID!= -1:
